@@ -1,6 +1,8 @@
 # yuanyou2 QuestVR Piper 双臂遥操
 
-这是基于 `agilexrobotics/questVR_ws` 和 `Piper_ros` 整理的 yuanyou2 双 Piper 机械臂 VR 遥操包。当前版本面向 Jetson / Ubuntu 20.04 / ROS Noetic / Meta Quest 2 或 Quest 3，包含我们已经调过的双臂 CAN 命名、Quest ADB 检查、低速平滑归零、移动机器人双臂安装场景下的 IK 参数、左右臂独立位移/姿态映射，以及 VR APK 安装包。
+Quest 3S / Quest 系列 VR teleop control for yuanyou2 robot.
+
+这是基于 `agilexrobotics/questVR_ws` 和 `Piper_ros` 整理的 yuanyou2 双 Piper 机械臂 VR 遥操包。当前版本面向 Jetson / Ubuntu 20.04 / ROS Noetic / Meta Quest 2、Quest 3 或 Quest 3S，包含我们已经调过的双臂 CAN 命名、Quest ADB 检查、低速平滑归零、移动机器人双臂安装场景下的 IK 参数、左右臂独立位移/姿态映射，以及 VR APK 安装包。
 
 ## 目录
 
