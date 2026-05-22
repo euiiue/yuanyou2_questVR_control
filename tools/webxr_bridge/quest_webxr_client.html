@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yuanyou Quest Teleop</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111214;
+      --panel: #1b1d21;
+      --line: #343841;
+      --text: #f4f7fb;
+      --muted: #aab1bd;
+      --green: #4dd58a;
+      --red: #ff6b6b;
+      --blue: #6ab5ff;
+      --yellow: #ffd166;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 16px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main {
+      width: min(920px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 32px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 720;
+      letter-spacing: 0;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #15171a;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--yellow);
+      box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.12);
+    }
+
+    .dot.good {
+      background: var(--green);
+      box-shadow: 0 0 0 3px rgba(77, 213, 138, 0.12);
+    }
+
+    .dot.bad {
+      background: var(--red);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.12);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    button {
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 16px;
+      background: var(--blue);
+      color: #07111c;
+      font-weight: 720;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      border: 1px solid var(--line);
+      background: #242832;
+      color: var(--text);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 42px;
+      padding: 0 10px;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #15171a;
+    }
+
+    input[type="range"] {
+      width: 140px;
+      accent-color: var(--blue);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card {
+      min-height: 184px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 14px;
+    }
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      letter-spacing: 0;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    pre {
+      margin: 0;
+      overflow: auto;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+      color: #d8dee9;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .log {
+      margin-top: 12px;
+      min-height: 120px;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 1px;
+      height: 1px;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    @media (max-width: 760px) {
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Yuanyou Quest Teleop</h1>
+      <div class="status"><span id="wsDot" class="dot"></span><span id="wsText">WebSocket 未连接</span></div>
+    </header>
+
+    <section class="toolbar">
+      <button id="enterVr">进入 VR</button>
+      <button id="reconnect" class="secondary">重连</button>
+      <label>发送频率 <input id="rate" type="range" min="5" max="72" step="1" value="30"><span id="rateText">30 Hz</span></label>
+      <label><input id="streamEnabled" type="checkbox" checked> 发送数据</label>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Head</h2>
+        <pre id="head">等待 VR 会话</pre>
+      </article>
+      <article class="card">
+        <h2>Left Controller</h2>
+        <pre id="left">等待手柄</pre>
+      </article>
+      <article class="card">
+        <h2>Right Controller</h2>
+        <pre id="right">等待手柄</pre>
+      </article>
+    </section>
+
+    <article class="card log">
+      <h2>Runtime</h2>
+      <pre id="log">页面已加载</pre>
+    </article>
+  </main>
+  <canvas id="xrCanvas"></canvas>
+
+  <script>
+    const state = {
+      ws: null,
+      wsOpen: false,
+      xrSession: null,
+      refSpace: null,
+      scene: null,
+      lastSend: 0,
+      sentFrames: 0,
+      lastUi: 0,
+    };
+
+    const els = {
+      wsDot: document.getElementById("wsDot"),
+      wsText: document.getElementById("wsText"),
+      enterVr: document.getElementById("enterVr"),
+      reconnect: document.getElementById("reconnect"),
+      rate: document.getElementById("rate"),
+      rateText: document.getElementById("rateText"),
+      streamEnabled: document.getElementById("streamEnabled"),
+      head: document.getElementById("head"),
+      left: document.getElementById("left"),
+      right: document.getElementById("right"),
+      log: document.getElementById("log"),
+      canvas: document.getElementById("xrCanvas"),
+    };
+
+    function log(line) {
+      const stamp = new Date().toLocaleTimeString();
+      els.log.textContent = `[${stamp}] ${line}\n` + els.log.textContent.split("\n").slice(0, 7).join("\n");
+    }
+
+    function setWsStatus(kind, text) {
+      els.wsDot.className = `dot ${kind || ""}`.trim();
+      els.wsText.textContent = text;
+    }
+
+    function connectWs() {
+      if (state.ws) {
+        state.ws.close();
+      }
+      const url = `ws://${location.hostname || "127.0.0.1"}:8765/vr`;
+      setWsStatus("", "WebSocket 连接中");
+      state.ws = new WebSocket(url);
+      state.ws.addEventListener("open", () => {
+        state.wsOpen = true;
+        setWsStatus("good", "WebSocket 已连接");
+        log(`已连接 ${url}`);
+      });
+      state.ws.addEventListener("close", () => {
+        state.wsOpen = false;
+        setWsStatus("bad", "WebSocket 已断开");
+      });
+      state.ws.addEventListener("error", () => {
+        state.wsOpen = false;
+        setWsStatus("bad", "WebSocket 错误");
+      });
+    }
+
+    function poseToObject(pose) {
+      if (!pose) return null;
+      const p = pose.transform.position;
+      const q = pose.transform.orientation;
+      return {
+        position: { x: p.x, y: p.y, z: p.z },
+        orientation: { x: q.x, y: q.y, z: q.z, w: q.w },
+        linearVelocity: pose.linearVelocity ? {
+          x: pose.linearVelocity.x,
+          y: pose.linearVelocity.y,
+          z: pose.linearVelocity.z,
+        } : null,
+        angularVelocity: pose.angularVelocity ? {
+          x: pose.angularVelocity.x,
+          y: pose.angularVelocity.y,
+          z: pose.angularVelocity.z,
+        } : null,
+      };
+    }
+
+    function gamepadToObject(inputSource) {
+      const gp = inputSource.gamepad;
+      if (!gp) return null;
+      return {
+        handedness: inputSource.handedness || "unknown",
+        axes: Array.from(gp.axes || []),
+        buttons: Array.from(gp.buttons || []).map((button) => ({
+          pressed: button.pressed,
+          touched: button.touched,
+          value: button.value,
+        })),
+      };
+    }
+
+    function fmtPose(data) {
+      if (!data) return "未追踪";
+      const p = data.position;
+      const q = data.orientation;
+      return [
+        `p: ${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}`,
+        `q: ${q.x.toFixed(3)}, ${q.y.toFixed(3)}, ${q.z.toFixed(3)}, ${q.w.toFixed(3)}`,
+      ].join("\n");
+    }
+
+    function fmtController(data) {
+      if (!data) return "未追踪";
+      const axes = data.gamepad?.axes?.map((v) => v.toFixed(2)).join(", ") || "";
+      const buttons = data.gamepad?.buttons?.map((button, index) => button.pressed ? index : null).filter((v) => v !== null).join(", ") || "无";
+      return `${fmtPose(data.pose)}\naxes: ${axes}\npressed: ${buttons}`;
+    }
+
+    function compileShader(gl, type, source) {
+      const shader = gl.createShader(type);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(shader) || "Shader compile failed");
+      }
+      return shader;
+    }
+
+    function createProgram(gl) {
+      const vertex = compileShader(gl, gl.VERTEX_SHADER, `
+        attribute vec3 a_position;
+        attribute vec3 a_color;
+        uniform mat4 u_projection;
+        uniform mat4 u_view;
+        varying vec3 v_color;
+        void main() {
+          v_color = a_color;
+          gl_Position = u_projection * u_view * vec4(a_position, 1.0);
+        }
+      `);
+      const fragment = compileShader(gl, gl.FRAGMENT_SHADER, `
+        precision mediump float;
+        varying vec3 v_color;
+        void main() {
+          gl_FragColor = vec4(v_color, 1.0);
+        }
+      `);
+      const program = gl.createProgram();
+      gl.attachShader(program, vertex);
+      gl.attachShader(program, fragment);
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        throw new Error(gl.getProgramInfoLog(program) || "Program link failed");
+      }
+      return program;
+    }
+
+    function pushLine(lines, ax, ay, az, bx, by, bz, r, g, b) {
+      lines.push(ax, ay, az, r, g, b, bx, by, bz, r, g, b);
+    }
+
+    function pushCross(lines, p, size, r, g, b) {
+      if (!p) return;
+      pushLine(lines, p.x - size, p.y, p.z, p.x + size, p.y, p.z, r, g, b);
+      pushLine(lines, p.x, p.y - size, p.z, p.x, p.y + size, p.z, r, g, b);
+      pushLine(lines, p.x, p.y, p.z - size, p.x, p.y, p.z + size, r, g, b);
+    }
+
+    function createScene(gl) {
+      const program = createProgram(gl);
+      const buffer = gl.createBuffer();
+      const lines = [];
+
+      for (let i = -12; i <= 12; i += 1) {
+        const c = i === 0 ? 0.36 : 0.18;
+        pushLine(lines, -3, 0, i * 0.25, 3, 0, i * 0.25, c, c, c);
+        pushLine(lines, i * 0.25, 0, -3, i * 0.25, 0, 3, c, c, c);
+      }
+
+      pushLine(lines, 0, 0.01, 0, 0.65, 0.01, 0, 1.0, 0.2, 0.2);
+      pushLine(lines, 0, 0.01, 0, 0, 0.75, 0, 0.2, 1.0, 0.35);
+      pushLine(lines, 0, 0.01, 0, 0, 0.01, -0.65, 0.25, 0.55, 1.0);
+
+      const z = -1.6;
+      pushLine(lines, -0.45, 1.05, z, 0.45, 1.05, z, 0.95, 0.82, 0.22);
+      pushLine(lines, 0.45, 1.05, z, 0.45, 1.55, z, 0.95, 0.82, 0.22);
+      pushLine(lines, 0.45, 1.55, z, -0.45, 1.55, z, 0.95, 0.82, 0.22);
+      pushLine(lines, -0.45, 1.55, z, -0.45, 1.05, z, 0.95, 0.82, 0.22);
+      pushLine(lines, -0.16, 1.3, z, 0.16, 1.3, z, 0.2, 0.95, 1.0);
+      pushLine(lines, 0, 1.14, z, 0, 1.46, z, 0.2, 0.95, 1.0);
+
+      return {
+        program,
+        buffer,
+        staticLines: lines,
+        aPosition: gl.getAttribLocation(program, "a_position"),
+        aColor: gl.getAttribLocation(program, "a_color"),
+        uProjection: gl.getUniformLocation(program, "u_projection"),
+        uView: gl.getUniformLocation(program, "u_view"),
+      };
+    }
+
+    function drawScene(gl, layer, viewerPose, payload) {
+      if (!viewerPose) return;
+      if (!state.scene) state.scene = createScene(gl);
+
+      const lines = state.scene.staticLines.slice();
+      pushCross(lines, payload.left?.pose?.position, 0.045, 0.25, 0.75, 1.0);
+      pushCross(lines, payload.right?.pose?.position, 0.045, 1.0, 0.55, 0.25);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.scene.buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lines), gl.DYNAMIC_DRAW);
+
+      gl.useProgram(state.scene.program);
+      gl.enableVertexAttribArray(state.scene.aPosition);
+      gl.enableVertexAttribArray(state.scene.aColor);
+      gl.vertexAttribPointer(state.scene.aPosition, 3, gl.FLOAT, false, 24, 0);
+      gl.vertexAttribPointer(state.scene.aColor, 3, gl.FLOAT, false, 24, 12);
+      gl.enable(gl.DEPTH_TEST);
+
+      for (const view of viewerPose.views) {
+        const viewport = layer.getViewport(view);
+        gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+        gl.clearColor(0.015, 0.018, 0.024, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.uniformMatrix4fv(state.scene.uProjection, false, view.projectionMatrix);
+        gl.uniformMatrix4fv(state.scene.uView, false, view.transform.inverse.matrix);
+        gl.drawArrays(gl.LINES, 0, lines.length / 6);
+      }
+    }
+
+    async function enterVr() {
+      if (!navigator.xr) {
+        log("当前浏览器不支持 WebXR");
+        return;
+      }
+      const supported = await navigator.xr.isSessionSupported("immersive-vr");
+      if (!supported) {
+        log("当前设备不支持 immersive-vr");
+        return;
+      }
+
+      const session = await navigator.xr.requestSession("immersive-vr", {
+        optionalFeatures: ["local-floor", "bounded-floor"],
+      });
+      state.xrSession = session;
+
+      const gl = els.canvas.getContext("webgl", { xrCompatible: true });
+      await gl.makeXRCompatible();
+      session.updateRenderState({ baseLayer: new XRWebGLLayer(session, gl) });
+
+      try {
+        state.refSpace = await session.requestReferenceSpace("local-floor");
+      } catch {
+        state.refSpace = await session.requestReferenceSpace("local");
+      }
+
+      session.addEventListener("end", () => {
+        state.xrSession = null;
+        state.scene = null;
+        els.enterVr.disabled = false;
+        log("VR 会话已结束");
+      });
+      els.enterVr.disabled = true;
+      log("VR 会话已启动");
+      session.requestAnimationFrame(onXrFrame);
+    }
+
+    function findController(inputSources, handedness) {
+      for (const source of inputSources) {
+        if (source.handedness === handedness) return source;
+      }
+      return null;
+    }
+
+    function controllerPayload(frame, source) {
+      if (!source) return null;
+      const space = source.gripSpace || source.targetRaySpace;
+      const pose = space ? frame.getPose(space, state.refSpace) : null;
+      return {
+        handedness: source.handedness || "unknown",
+        profiles: Array.from(source.profiles || []),
+        pose: poseToObject(pose),
+        gamepad: gamepadToObject(source),
+      };
+    }
+
+    function sendPayload(payload) {
+      if (!els.streamEnabled.checked || !state.wsOpen || state.ws.readyState !== WebSocket.OPEN) return;
+      state.ws.send(JSON.stringify(payload));
+      state.sentFrames += 1;
+    }
+
+    function onXrFrame(time, frame) {
+      const session = frame.session;
+      session.requestAnimationFrame(onXrFrame);
+
+      const layer = session.renderState.baseLayer;
+      const gl = layer.context;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+
+      const viewerPose = frame.getViewerPose(state.refSpace);
+      const leftSource = findController(session.inputSources, "left");
+      const rightSource = findController(session.inputSources, "right");
+      const payload = {
+        type: "webxr_frame",
+        timestamp: Date.now() / 1000,
+        xrTime: time,
+        referenceSpace: "local-floor",
+        head: poseToObject(viewerPose),
+        left: controllerPayload(frame, leftSource),
+        right: controllerPayload(frame, rightSource),
+      };
+
+      drawScene(gl, layer, viewerPose, payload);
+
+      const intervalMs = 1000 / Number(els.rate.value);
+      if (time - state.lastSend >= intervalMs) {
+        state.lastSend = time;
+        sendPayload(payload);
+      }
+
+      if (time - state.lastUi >= 120) {
+        state.lastUi = time;
+        els.head.textContent = fmtPose(payload.head);
+        els.left.textContent = fmtController(payload.left);
+        els.right.textContent = fmtController(payload.right);
+      }
+    }
+
+    els.enterVr.addEventListener("click", () => enterVr().catch((err) => log(err.message || String(err))));
+    els.reconnect.addEventListener("click", connectWs);
+    els.rate.addEventListener("input", () => {
+      els.rateText.textContent = `${els.rate.value} Hz`;
+    });
+
+    window.addEventListener("load", () => {
+      connectWs();
+      if (!window.isSecureContext) {
+        log("当前页面不是安全上下文；请通过 http://localhost:8088 或 http://127.0.0.1:8088 打开");
+      }
+    });
+  </script>
+</body>
+</html>

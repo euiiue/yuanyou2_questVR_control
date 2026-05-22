@@ -1,0 +1,16 @@
+name: vt
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy
+  - pyyaml
+  - pinocchio=3.2.0
+  - casadi=3.6.7
+  - pip
+  - pip:
+      - meshcat
+      - rospkg
+      - pure-python-adb
+      - piper-sdk
+

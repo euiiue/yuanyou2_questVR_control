@@ -1,0 +1,11 @@
+<launch>
+
+  <include file="$(find piper)/launch/start_single_piper.launch"/>
+
+  <node name="teleop_single_piper_node" pkg="oculus_reader" type="teleop_single_piper.py" output="screen" />
+
+  <node name="pub_pose_node" pkg="oculus_reader" type="pub_pose.py" output="screen" />
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find oculus_reader)/config/oculus_reader.rviz" />
+  
+</launch>
