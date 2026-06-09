@@ -55,7 +55,7 @@ def generate_launch_description():
     button_x = ParameterValue("X", value_type=str)
     button_y = ParameterValue("Y", value_type=str)
     left_home_positions = [0.403, 2.015, -1.562, 0.064, -0.062, 0.247]
-    right_home_positions = [-0.2223898533, 2.7733456347, -2.9681767391, -0.7919780547, 0.2178345439, -0.6040759074]
+    right_home_positions = [-0.079, 2.084, -1.513, 1.743, 0.141, -0.049]
     teleop_filter_params = {
         "input_pos_alpha": 0.30,
         "input_rot_alpha": 0.45,
