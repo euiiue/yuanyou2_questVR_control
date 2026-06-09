@@ -1,5 +1,23 @@
 # Quest 3S Teleoperation for Yuanyou2
+<p align="left">
+  <img src="https://img.shields.io/badge/version-v0.1.0-blue" />
+  <img src="https://img.shields.io/badge/ROS%202-Foxy-22314E?logo=ros&logoColor=white" />
+  <img src="https://img.shields.io/badge/Ubuntu-20.04-E95420?logo=ubuntu&logoColor=white" />
+  <img src="https://img.shields.io/badge/Jetson-Orin%20NX-76B900?logo=nvidia&logoColor=white" />
+  <img src="https://img.shields.io/badge/VR-Meta%20Quest%203S-0467DF?logo=meta&logoColor=white" />
+  <img src="https://img.shields.io/badge/Robot-Yuanyou2%20Dual%20Piper-red" />
+  <img src="https://img.shields.io/badge/Input-OpenXR%20%2B%20ADB-lightgrey" />
+  <img src="https://img.shields.io/badge/Control-IK%20Teleoperation-informational" />
+  <img src="https://img.shields.io/badge/CAN-can0%20%7C%20can1-yellow" />
+  <img src="https://img.shields.io/badge/Safety-Workspace%20Guard-success" />
+</p>
 
+<p align="left">
+  <img src="https://img.shields.io/github/last-commit/euiiue/yuanyou2_questVR_control" />
+  <img src="https://img.shields.io/github/languages/top/euiiue/yuanyou2_questVR_control" />
+  <img src="https://img.shields.io/github/repo-size/euiiue/yuanyou2_questVR_control" />
+  <img src="https://img.shields.io/github/stars/euiiue/yuanyou2_questVR_control?style=social" />
+</p>
 基于 ROS 2 Foxy、Quest 3S 和 Yuanyou2 的双臂遥操作系统。当前版本面向 Jetson 实机运行，核心目标是用 Quest 手柄的 OpenXR 位姿数据控制左右两台 Piper 机械臂，同时保留夹爪控制、HOME 复位、IK 安全护栏和单发布源关节控制链路。
 
 ## 快速入口
