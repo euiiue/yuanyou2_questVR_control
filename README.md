@@ -18,7 +18,7 @@
 | ROS 版本 | ROS 2 Foxy |
 | VR 设备 | Meta Quest 3S |
 | VR 数据入口 | ADB logcat + OculusReader |
-| 机械臂 | AgileX Piper 双臂 |
+| 机械臂 | Yuanyou双臂 |
 | 左臂 CAN | `can0` |
 | 右臂 CAN | `can1` |
 | 主启动文件 | `src/oculus_reader/launch/teleop_double_piper.launch.py` |
