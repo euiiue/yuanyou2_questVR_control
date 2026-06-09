@@ -3,6 +3,9 @@ __pycache__
 build
 log
 install
-docs
 .codegraph
-
+.pytest_cache
+docs/*
+!docs/
+!docs/quick_start.md
+src/**/docs/

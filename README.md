@@ -2,6 +2,14 @@
 
 基于 ROS 2 Foxy、Quest 3S 和 Yuanyou2 的双臂遥操作系统。当前版本面向 Jetson 实机运行，核心目标是用 Quest 手柄的 OpenXR 位姿数据控制左右两台 Piper 机械臂，同时保留夹爪控制、HOME 复位、IK 安全护栏和单发布源关节控制链路。
 
+## 快速入口
+
+| 文档 | 说明 |
+| --- | --- |
+| [Quick Start](docs/quick_start.md) | 最短实机启动流程 |
+| [requirements.txt](requirements.txt) | Python 运行依赖 |
+| [LICENSE](LICENSE) | 仓库顶层许可证 |
+
 ## 项目状态
 
 本仓库是当前实机运行版本，运行路径如下：
