@@ -1,33 +1,8 @@
-# Catkin / ROS build outputs
-/build/
-/devel/
-/install/
-/.catkin_workspace
-
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-.pytest_cache/
-.mypy_cache/
-
-# Runtime logs and bags
-*.log
-*.bag
-*.db3
-/.ros/
-/logs/
-/log/
-
-# Editors / OS
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-
-# Local credentials / machine specific config
-.env
-*.local
-known_hosts
+.vscode
+__pycache__
+build
+log
+install
+docs
+.codegraph
 

@@ -22,7 +22,10 @@ class OculusReader:
             port = 5555,
             APK_name='com.rail.oculus.teleop',
             print_FPS=False,
-            run=True
+            run=True,
+            wait_for_device=True,
+            device_retry_sec=2.0,
+            max_device_retries=0,
         ):
         self.running = False
         self.last_transforms = {}
@@ -34,6 +37,9 @@ class OculusReader:
         self.port = port
         self.APK_name = APK_name
         self.print_FPS = print_FPS
+        self.wait_for_device = bool(wait_for_device)
+        self.device_retry_sec = max(0.1, float(device_retry_sec))
+        self.max_device_retries = max(0, int(max_device_retries))
         if self.print_FPS:
             self.fps_counter = FPSCounter()
         self.device = self.get_device()
@@ -77,17 +83,30 @@ class OculusReader:
         return device
 
     def get_usb_device(self, client):
-        try:
-            devices = client.devices()
-        except RuntimeError:
+        attempts = 0
+        while True:
+            try:
+                devices = client.devices()
+            except RuntimeError:
+                os.system('adb devices')
+                devices = client.devices()
+
+            for device in devices:
+                if device.serial.count('.') < 3:
+                    if attempts > 0:
+                        eprint('Oculus/Quest device detected over USB.')
+                    return device
+
+            eprint('Device not found. Make sure that device is running and is connected over USB')
+            eprint('Run `adb devices` to verify that the device is visible.')
             os.system('adb devices')
-            devices = client.devices()
-        for device in devices:
-            if device.serial.count('.') < 3:
-                return device
-        eprint('Device not found. Make sure that device is running and is connected over USB')
-        eprint('Run `adb devices` to verify that the device is visible.')
-        exit(1)
+
+            attempts += 1
+            if not self.wait_for_device or (
+                self.max_device_retries > 0 and attempts >= self.max_device_retries
+            ):
+                raise RuntimeError('Oculus/Quest USB device not found')
+            time.sleep(self.device_retry_sec)
 
     def get_device(self):
         # Default is "127.0.0.1" and 5037
@@ -98,24 +117,35 @@ class OculusReader:
             return self.get_usb_device(client)
 
     def install(self, APK_path=None, verbose=True, reinstall=False):
-        try:
-            installed = self.device.is_installed(self.APK_name)
-            if not installed or reinstall:
-                if APK_path is None:
-                    APK_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'APK', 'teleop-debug.apk')
-                success = self.device.install(APK_path, test=True, reinstall=reinstall)
+        attempts = 0
+        while True:
+            try:
                 installed = self.device.is_installed(self.APK_name)
-                if installed and success:
-                    print('APK installed successfully.')
-                else:
-                    eprint('APK install failed.')
-            elif verbose:
-                print('APK is already installed.')
-        except RuntimeError:
-            eprint('Device is visible but could not be accessed.')
-            eprint('Run `adb devices` to verify that the device is visible and accessible.')
-            eprint('If you see "no permissions" next to the device serial, please put on the Oculus Quest and allow the access.')
-            exit(1)
+                if not installed or reinstall:
+                    if APK_path is None:
+                        APK_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'APK', 'teleop-debug.apk')
+                    success = self.device.install(APK_path, test=True, reinstall=reinstall)
+                    installed = self.device.is_installed(self.APK_name)
+                    if installed and success:
+                        print('APK installed successfully.')
+                    else:
+                        eprint('APK install failed.')
+                elif verbose:
+                    print('APK is already installed.')
+                return
+            except RuntimeError:
+                eprint('Device is visible but could not be accessed.')
+                eprint('Run `adb devices` to verify that the device is visible and accessible.')
+                eprint('If you see "no permissions" next to the device serial, please put on the Oculus Quest and allow the access.')
+                os.system('adb devices')
+
+                attempts += 1
+                if not self.wait_for_device or (
+                    self.max_device_retries > 0 and attempts >= self.max_device_retries
+                ):
+                    raise
+                time.sleep(self.device_retry_sec)
+                self.device = self.get_device()
 
     def uninstall(self, verbose=True):
         try:
